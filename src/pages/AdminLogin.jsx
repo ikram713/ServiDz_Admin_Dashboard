@@ -1,19 +1,39 @@
 import { useState } from "react";
-import loginBg from "../../assets/login_bg.png";
-import logo from "../../assets/logo.png";
+import { useNavigate } from "react-router-dom"; // 👈 for redirect after login
+import { loginAdmin } from "../api/loginApi"; 
+import loginBg from "../assets/login_bg.png";
+import logo from "../assets/logo.png";
 
 export default function AdminLogin() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [error, setError] = useState(""); // 👈 show errors if login fails
+  const navigate = useNavigate();
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    console.log("Login attempt:", { email, password });
+    setError("");
+
+    try {
+      const data = await loginAdmin(email, password);
+      console.log("Login success:", data);
+
+      // store token in localStorage
+      localStorage.setItem("adminToken", data.token);
+
+      // redirect to dashboard
+      navigate("/dashboard");
+    } catch (err) {
+      console.error("Login error:", err);
+      setError(
+        err?.message || err?.error || "Login failed. Please try again."
+      );
+    }
   };
 
   return (
     <div className="h-screen flex font-sans overflow-hidden">
-      {/* Left side background image - shown on medium and large screens */}
+      {/* Left side background image */}
       <div className="hidden md:flex md:w-1/2 relative">
         <div className="absolute inset-0 bg-gradient-to-br from-blue-900/80 to-indigo-900/80 z-10"></div>
         <img
@@ -29,7 +49,7 @@ export default function AdminLogin() {
         </div>
       </div>
 
-      {/* Right side form - full width on small screens, half width on medium+ */}
+      {/* Right side form */}
       <div className="w-full md:w-1/2 flex items-center justify-center bg-gray-50 p-4">
         <div className="w-full max-w-md bg-white rounded-xl shadow-lg p-5">
           <div className="flex justify-center mb-3">
@@ -47,6 +67,11 @@ export default function AdminLogin() {
           <p className="text-gray-600 text-center mb-4 text-sm">
             Sign in to access your dashboard
           </p>
+
+          {/* error message */}
+          {error && (
+            <p className="text-red-500 text-center text-sm mb-2">{error}</p>
+          )}
 
           <form onSubmit={handleSubmit} className="space-y-3">
             <div>
