@@ -1,0 +1,156 @@
+/* Base layout (desktop/tablet) */
+.login-container {
+  display: flex;
+  height: 100vh;
+  width: 100%;
+  font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+  overflow: hidden;
+}
+
+/* Left side image */
+.login-left {
+  flex: 1;
+  background-color: #0d3b66; /* fallback in case image doesn't load */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+
+
+.login-bg {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* Right side login form */
+.login-right {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #f8f9fa;
+}
+
+.login-box {
+  width: 100%;
+  max-width: 400px;
+  background: #fff;
+  padding: 2rem;
+  border-radius: 12px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
+  text-align: center;
+}
+
+.login-logo {
+  width: 100px;
+  margin-bottom: 1rem;
+}
+
+h2 {
+  margin-bottom: 2rem;
+  font-weight: 600;
+  color: #333;
+}
+
+/* Inputs */
+.input-group {
+  margin-bottom: 1rem;
+  text-align: left;
+}
+
+.input-group label {
+  display: block;
+  margin-bottom: 0.5rem;
+  font-weight: 500;
+  color: #444;
+}
+
+.input-group input {
+  width: 100%;
+  padding: 0.75rem;
+  border-radius: 8px;
+  border: 1px solid #ccc;
+  outline: none;
+  transition: all 0.2s;
+}
+
+.input-group input:focus {
+  border-color: #0d6efd;
+  box-shadow: 0 0 0 2px rgba(13, 110, 253, 0.2);
+}
+
+/* Button */
+.login-btn {
+  width: 100%;
+  padding: 0.9rem;
+  border: none;
+  border-radius: 8px;
+  background-color: #0d6efd;
+  color: white;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.3s;
+  margin-bottom: 10px;
+}
+
+.login-btn:hover {
+  background-color: #084298;
+}
+
+.login-footer {
+  margin-top: 1.5rem;
+  text-align: center;
+  font-size: 0.85rem;
+  color: #666;
+  position: absolute;
+  bottom: 20px;
+  width: 100%;
+}
+
+
+/* 🔥 Responsive styles */
+@media (max-width: 768px) {
+  .login-container {
+    flex-direction: column;
+  }
+
+  /* Hide background section */
+  .login-left {
+    display: none;
+  }
+
+  /* Expand login form to full width */
+  .login-right {
+    flex: none;
+    width: 100%;
+    height: 100vh;
+    background: #f8f9fa;
+  }
+
+  .login-box {
+    max-width: 90%;
+    margin: auto;
+  }
+}
+
+@media (max-width: 480px) {
+  .login-logo {
+    width: 80px;
+  }
+
+  h2 {
+    font-size: 1.2rem;
+  }
+
+  .input-group input {
+    padding: 0.6rem;
+  }
+
+  .login-btn {
+    padding: 0.75rem;
+    font-size: 0.9rem;
+  }
+}
