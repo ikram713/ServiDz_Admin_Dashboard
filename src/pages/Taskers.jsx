@@ -17,7 +17,8 @@ import {
   FaStar,
   FaTools
 } from "react-icons/fa";
-import { getAllTaskers } from '../api/taskersApi'; // You'll need to create this API function
+import { getAllTaskers } from '../api/taskersApi';
+import { banTasker } from '../api/taskersApi'; // Import the banTasker function
 
 export default function Taskers() {
   const [taskers, setTaskers] = useState([]);
@@ -26,6 +27,7 @@ export default function Taskers() {
   const [selectedTaskers, setSelectedTaskers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [banningTaskerId, setBanningTaskerId] = useState(null); // Track which tasker is being banned
 
   // Format date function
   const formatDate = (dateString) => {
@@ -53,16 +55,16 @@ export default function Taskers() {
         
         // Transform API data to match component expectations
         const formattedTaskers = taskersData.map(tasker => ({
-          id: tasker._id,
+          id: tasker.id,
           name: tasker.name,
           email: tasker.email,
           phone: tasker.phone || 'N/A',
           profession: tasker.skills || 'General Tasker',
           status: tasker.status ? tasker.status.toLowerCase() : 'active',
-          joinDate: formatDate(tasker.joinDate),
+          joinDate: formatDate(tasker.joinDate || tasker.createdAt),
           rating: tasker.rating || 0,
           completedTasks: tasker.completedTasks || 0,
-          avatar: tasker.profileImage || "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?ixlib=rb-1.2.1&auto=format&fit=facearea&facepad=2&w=256&h=256&q=80",
+          avatar: tasker.profileImage || tasker.avatar || "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?ixlib=rb-1.2.1&auto=format&fit=facearea&facepad=2&w=256&h=256&q=80",
           // Include original data for potential use
           originalData: tasker
         }));
@@ -78,6 +80,42 @@ export default function Taskers() {
 
     fetchTaskers();
   }, []);
+
+  // Handle ban tasker action
+  const handleBanTasker = async (taskerId) => {
+    try {
+      setBanningTaskerId(taskerId);
+      await banTasker(taskerId);
+      
+      // Update the tasker status in the local state
+      setTaskers(taskers.map(tasker => 
+        tasker.id === taskerId ? { ...tasker, status: 'suspended' } : tasker
+      ));
+      
+      alert('Tasker banned successfully');
+    } catch (err) {
+      console.error("Error banning tasker:", err);
+      alert('Failed to ban tasker. Please try again.');
+    } finally {
+      setBanningTaskerId(null);
+    }
+  };
+
+  // Handle activate tasker action
+  const handleActivateTasker = async (taskerId) => {
+    try {
+      // You'll need to create an activateTasker API function
+      // For now, just update the local state
+      setTaskers(taskers.map(tasker => 
+        tasker.id === taskerId ? { ...tasker, status: 'active' } : tasker
+      ));
+      
+      alert('Tasker activated successfully');
+    } catch (err) {
+      console.error("Error activating tasker:", err);
+      alert('Failed to activate tasker. Please try again.');
+    }
+  };
 
   // Filter taskers based on search term and status filter
   const filteredTaskers = taskers.filter(tasker => {
@@ -109,12 +147,6 @@ export default function Taskers() {
       setTaskers(taskers.filter(tasker => tasker.id !== taskerId));
       setSelectedTaskers(selectedTaskers.filter(id => id !== taskerId));
     }
-  };
-
-  const handleStatusChange = (taskerId, newStatus) => {
-    setTaskers(taskers.map(tasker => 
-      tasker.id === taskerId ? { ...tasker, status: newStatus } : tasker
-    ));
   };
 
   // Loading state
@@ -326,16 +358,21 @@ export default function Taskers() {
                           {tasker.status === 'active' ? (
                             <button 
                               className="p-1 text-red-600 hover:bg-red-50 rounded"
-                              title="Suspend Tasker"
-                              onClick={() => handleStatusChange(tasker.id, 'suspended')}
+                              title="Ban Tasker"
+                              onClick={() => handleBanTasker(tasker.id)}
+                              disabled={banningTaskerId === tasker.id}
                             >
-                              <FaBan className="text-xs" />
+                              {banningTaskerId === tasker.id ? (
+                                <FaSpinner className="text-xs animate-spin" />
+                              ) : (
+                                <FaBan className="text-xs" />
+                              )}
                             </button>
                           ) : (
                             <button 
                               className="p-1 text-green-600 hover:bg-green-50 rounded"
                               title="Activate Tasker"
-                              onClick={() => handleStatusChange(tasker.id, 'active')}
+                              onClick={() => handleActivateTasker(tasker.id)}
                             >
                               <FaCheckCircle className="text-xs" />
                             </button>
