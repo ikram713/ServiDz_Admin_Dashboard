@@ -13,3 +13,13 @@ export const getAllTaskers = async () => {
     throw error;
     }
 };
+
+export const banTasker = async (taskerId) => {
+  try {
+    const response = await axios.put(`${API_URL}/ban-tasker/${taskerId}`);
+    return response.data;
+  } catch (error) {
+    console.error('Error banning tasker:', error);
+    throw error;
+  }
+};
