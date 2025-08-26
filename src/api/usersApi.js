@@ -13,3 +13,15 @@ export const getAllUsers = async () => {
     throw error;
   }
 };
+
+
+// Ban a user by ID
+export const banUser = async (userId) => {
+  try {
+    const response = await axios.put(`${API_URL}/ban/${userId}`);
+    return response.data; // returns { message: 'User banned successfully' }
+  } catch (error) {
+    console.error('Error banning user:', error);
+    throw error;
+  }
+};

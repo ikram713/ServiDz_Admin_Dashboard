@@ -15,7 +15,8 @@ import {
   FaEllipsisV,
   FaSpinner
 } from "react-icons/fa";
-import { getAllUsers } from '../api/usersApi'; // Import your API function
+import { getAllUsers } from '../api/usersApi';
+import { banUser } from '../api/usersApi';
 
 export default function Users() {
   const [users, setUsers] = useState([]);
@@ -24,6 +25,7 @@ export default function Users() {
   const [selectedUsers, setSelectedUsers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [banningUserId, setBanningUserId] = useState(null);
 
   // Fetch users from API
   useEffect(() => {
@@ -31,7 +33,13 @@ export default function Users() {
       try {
         setLoading(true);
         const usersData = await getAllUsers();
-        setUsers(usersData);
+        // Transform the data to use 'id' instead of '_id' for consistency
+        const transformedUsers = usersData.map(user => ({
+          ...user,
+          id: user._id,
+          status: user.status ? user.status.toLowerCase() : 'active'
+        }));
+        setUsers(transformedUsers);
       } catch (err) {
         console.error("Error fetching users:", err);
         setError("Failed to load users. Please try again.");
@@ -42,6 +50,42 @@ export default function Users() {
 
     fetchUsers();
   }, []);
+
+  // Handle ban user action
+  const handleBanUser = async (userId) => {
+    try {
+      setBanningUserId(userId);
+      await banUser(userId);
+      
+      // Update the user status in the local state
+      setUsers(users.map(user => 
+        user.id === userId ? { ...user, status: 'suspended' } : user
+      ));
+      
+      alert('User banned successfully');
+    } catch (err) {
+      console.error("Error banning user:", err);
+      alert('Failed to ban user. Please try again.');
+    } finally {
+      setBanningUserId(null);
+    }
+  };
+
+  // Handle activate user action
+  const handleActivateUser = async (userId) => {
+    try {
+      // You'll need to create an activateUser API function
+      // For now, just update the local state
+      setUsers(users.map(user => 
+        user.id === userId ? { ...user, status: 'active' } : user
+      ));
+      
+      alert('User activated successfully');
+    } catch (err) {
+      console.error("Error activating user:", err);
+      alert('Failed to activate user. Please try again.');
+    }
+  };
 
   // Filter users based on search term and status filter
   const filteredUsers = users.filter(user => {
@@ -60,7 +104,7 @@ export default function Users() {
   };
 
   const handleSelectAll = () => {
-    if (selectedUsers.length === filteredUsers.length) {
+    if (selectedUsers.length === filteredUsers.length && filteredUsers.length > 0) {
       setSelectedUsers([]);
     } else {
       setSelectedUsers(filteredUsers.map(user => user.id));
@@ -72,12 +116,6 @@ export default function Users() {
       setUsers(users.filter(user => user.id !== userId));
       setSelectedUsers(selectedUsers.filter(id => id !== userId));
     }
-  };
-
-  const handleStatusChange = (userId, newStatus) => {
-    setUsers(users.map(user => 
-      user.id === userId ? { ...user, status: newStatus } : user
-    ));
   };
 
   // Loading state
@@ -120,9 +158,9 @@ export default function Users() {
       {/* Sidebar */}
       <Sidebar />
 
-      {/* Main content - Made more compact */}
+      {/* Main content */}
       <div className="flex-1 p-3 overflow-y-auto">
-        {/* Header - Made more compact */}
+        {/* Header */}
         <div className="flex flex-col md:flex-row md:items-center justify-between mb-4 gap-2">
           <div className="flex items-center">
             <FaUsers className="text-blue-600 text-lg mr-2" />
@@ -157,7 +195,7 @@ export default function Users() {
           </div>
         </div>
 
-        {/* Action Bar - Made more compact */}
+        {/* Action Bar */}
         <div className="bg-white p-3 rounded-md border border-gray-100 shadow-xs mb-3">
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-2">
             <div className="flex items-center gap-2">
@@ -200,7 +238,7 @@ export default function Users() {
           </div>
         </div>
 
-        {/* Users Table - Removed Last Login column */}
+        {/* Users Table */}
         <div className="bg-white rounded-md border border-gray-100 shadow-xs overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
@@ -276,16 +314,21 @@ export default function Users() {
                           {user.status === 'active' ? (
                             <button 
                               className="p-1 text-red-600 hover:bg-red-50 rounded"
-                              title="Suspend User"
-                              onClick={() => handleStatusChange(user.id, 'suspended')}
+                              title="Ban User"
+                              onClick={() => handleBanUser(user.id)}
+                              disabled={banningUserId === user.id}
                             >
-                              <FaBan className="text-xs" />
+                              {banningUserId === user.id ? (
+                                <FaSpinner className="text-xs animate-spin" />
+                              ) : (
+                                <FaBan className="text-xs" />
+                              )}
                             </button>
                           ) : (
                             <button 
                               className="p-1 text-green-600 hover:bg-green-50 rounded"
                               title="Activate User"
-                              onClick={() => handleStatusChange(user.id, 'active')}
+                              onClick={() => handleActivateUser(user.id)}
                             >
                               <FaCheckCircle className="text-xs" />
                             </button>
@@ -315,7 +358,7 @@ export default function Users() {
           </div>
         </div>
 
-        {/* Pagination - Made more compact */}
+        {/* Pagination */}
         <div className="flex items-center justify-between mt-3 px-1">
           <div className="text-xs text-gray-700">
             Showing <span className="font-medium">1</span> to <span className="font-medium">{filteredUsers.length}</span> of{' '}
