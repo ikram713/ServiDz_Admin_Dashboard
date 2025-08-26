@@ -1,11 +1,295 @@
+import React, { useState } from "react";
+import Sidebar from "../components/Sidebar";
+import {
+  FaUsers,
+  FaUserTie,
+  FaCalendarCheck,
+  FaDollarSign,
+  FaSearch,
+  FaBell,
+  FaArrowUp,
+  FaArrowDown,
+  FaEllipsisV,
+  FaFilter
+} from "react-icons/fa";
+import {
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  Tooltip,
+  CartesianGrid,
+  ResponsiveContainer,
+  Cell,
+  PieChart,
+  Pie
+} from "recharts";
 
+// Dummy data (replace with API later)
+const earningsData = [
+  { name: "Jan", value: 50 },
+  { name: "Feb", value: 200 },
+  { name: "Mar", value: 150 },
+  { name: "Apr", value: 80 },
+  { name: "May", value: 300 },
+  { name: "Jun", value: 250 },
+];
+
+const categoriesData = [
+  { name: "Plumbing", value: 400 },
+  { name: "Car Repair", value: 300 },
+  { name: "Electricity", value: 300 },
+  { name: "Cleaning", value: 200 },
+];
+
+const activities = [
+  { id: 1, activity: "New user signup", type: "User", date: "Apr 29, 2024", status: "completed" },
+  { id: 2, activity: "Tasker application approved", type: "Tasker", date: "Apr 28, 2024", status: "completed" },
+  { id: 3, activity: "New booking created", type: "Booking", date: "Apr 27, 2024", status: "pending" },
+  { id: 4, activity: "Payment processed", type: "Payment", date: "Apr 26, 2024", status: "completed" },
+  { id: 5, activity: "Service complaint", type: "Support", date: "Apr 25, 2024", status: "processing" },
+];
+
+const COLORS = ["#4CAF50", "#2196F3", "#FF9800", "#9C27B0"];
 
 export default function Dashboard() {
+  const [activeTab, setActiveTab] = useState("overview");
+
+  const handleTabClick = (tabName) => {
+    setActiveTab(tabName);
+  };
+
   return (
-    <div className="h-screen flex items-center justify-center bg-gray-100">
-      <h1 className="text-2xl font-bold text-gray-800">
-        🎉 Welcome to Admin Dashboard
-      </h1>
+    <div className="h-screen flex bg-gray-50">
+      {/* Sidebar */}
+      <Sidebar />
+
+      {/* Main content */}
+      <div className="flex-1 p-4 overflow-y-auto">
+        {/* Header with Search, Notification and Profile */}
+        <div className="flex flex-col md:flex-row md:items-center justify-between mb-4 gap-3">
+          <div className="relative flex-1 max-w-md">
+            <FaSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+            <input
+              type="text"
+              placeholder="Search for users, bookings, or tasks..."
+              className="w-full border border-gray-200 rounded-lg pl-10 pr-4 py-2 outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+            />
+          </div>
+          <div className="flex items-center gap-3">
+            <button className="relative p-1 text-gray-500 hover:text-blue-600 transition-colors">
+              <FaBell className="text-lg" />
+              <span className="absolute top-0 right-0 w-1.5 h-1.5 bg-red-500 rounded-full"></span>
+            </button>
+            <div className="flex items-center gap-2">
+              <img
+                src="https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?ixlib=rb-1.2.1&auto=format&fit=facearea&facepad=2&w=256&h-256&q=80"
+                alt="profile"
+                className="w-8 h-8 rounded-full border-2 border-white shadow-sm"
+              />
+              <div className="hidden md:block">
+                <p className="text-xs font-medium">Admin User</p>
+                <p className="text-xs text-gray-500">Administrator</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Tabs */}
+        <div className="flex border-b border-gray-200 mb-4">
+          <button
+            className={`px-3 py-1.5 text-xs font-medium ${activeTab === "overview" ? "text-blue-600 border-b-2 border-blue-600" : "text-gray-500 hover:text-gray-700"}`}
+            onClick={() => handleTabClick("overview")}
+          >
+            Overview
+          </button>
+          <button
+            className={`px-3 py-1.5 text-xs font-medium ${activeTab === "analytics" ? "text-blue-600 border-b-2 border-blue-600" : "text-gray-500 hover:text-gray-700"}`}
+            onClick={() => handleTabClick("analytics")}
+          >
+            Analytics
+          </button>
+          <button
+            className={`px-3 py-1.5 text-xs font-medium ${activeTab === "reports" ? "text-blue-600 border-b-2 border-blue-600" : "text-gray-500 hover:text-gray-700"}`}
+            onClick={() => handleTabClick("reports")}
+          >
+            Reports
+          </button>
+        </div>
+
+        {/* Stats Cards - Only show in Overview tab */}
+        {activeTab === "overview" && (
+          <div className="grid grid-cols-1 md:grid-cols-4 lg:grid-cols-4 gap-3 mb-4">
+            <div className="bg-white p-3 rounded-lg shadow-sm border border-gray-100 transition-all hover:shadow-md">
+              <div className="flex items-center justify-between mb-2">
+                <div className="p-2 rounded-md bg-blue-100">
+                  <FaUsers className="text-blue-600 text-lg" />
+                </div>
+                <span className="text-xs text-green-600 flex items-center font-medium">
+                  <FaArrowUp className="mr-0.5" /> 12%
+                </span>
+              </div>
+              <p className="text-gray-500 text-xs">Total Users</p>
+              <h2 className="text-xl font-bold text-gray-800">1,850</h2>
+              <p className="text-xs text-gray-500 mt-0.5">+120 this month</p>
+            </div>
+            
+            <div className="bg-white p-3 rounded-lg shadow-sm border border-gray-100 transition-all hover:shadow-md">
+              <div className="flex items-center justify-between mb-2">
+                <div className="p-2 rounded-md bg-green-100">
+                  <FaUserTie className="text-green-600 text-lg" />
+                </div>
+                <span className="text-xs text-green-600 flex items-center font-medium">
+                  <FaArrowUp className="mr-0.5" /> 8%
+                </span>
+              </div>
+              <p className="text-gray-500 text-xs">Total Taskers</p>
+              <h2 className="text-xl font-bold text-gray-800">44</h2>
+              <p className="text-xs text-gray-500 mt-0.5">+3 this month</p>
+            </div>
+            
+            <div className="bg-white p-3 rounded-lg shadow-sm border border-gray-100 transition-all hover:shadow-md">
+              <div className="flex items-center justify-between mb-2">
+                <div className="p-2 rounded-md bg-red-100">
+                  <FaCalendarCheck className="text-red-500 text-lg" />
+                </div>
+                <span className="text-xs text-red-600 flex items-center font-medium">
+                  <FaArrowDown className="mr-0.5" /> 5%
+                </span>
+              </div>
+              <p className="text-gray-500 text-xs">Today's Bookings</p>
+              <h2 className="text-xl font-bold text-gray-800">15</h2>
+              <p className="text-xs text-gray-500 mt-0.5">Avg: 20 per day</p>
+            </div>
+            
+            <div className="bg-white p-3 rounded-lg shadow-sm border border-gray-100 transition-all hover:shadow-md">
+              <div className="flex items-center justify-between mb-2">
+                <div className="p-2 rounded-md bg-yellow-100">
+                  <FaDollarSign className="text-yellow-600 text-lg" />
+                </div>
+                <span className="text-xs text-green-600 flex items-center font-medium">
+                  <FaArrowUp className="mr-0.5" /> 22%
+                </span>
+              </div>
+              <p className="text-gray-500 text-xs">Today's Earnings</p>
+              <h2 className="text-xl font-bold text-gray-800">$15,600</h2>
+              <p className="text-xs text-gray-500 mt-0.5">+$2,800 from yesterday</p>
+            </div>
+          </div>
+        )}
+
+        {/* Charts Container - Single row for both charts */}
+        {(activeTab === "overview" || activeTab === "analytics") && (
+          <div className="flex flex-col lg:flex-row md:flex-row gap-4 mb-4">
+            {/* Earnings Bar Chart */}
+            <div className="bg-white p-4 rounded-lg shadow-sm border border-gray-100 flex-1">
+              <div className="flex justify-between items-center mb-3">
+                <h3 className="text-md font-semibold text-gray-800">
+                  {activeTab === "overview" ? "Monthly Earnings" : "Revenue by Month"}
+                </h3>
+                <div className="flex items-center gap-1">
+                  <button className="text-gray-400 hover:text-gray-600 p-0.5">
+                    <FaFilter size={12} />
+                  </button>
+                  <button className="text-gray-400 hover:text-gray-600 p-0.5">
+                    <FaEllipsisV size={12} />
+                  </button>
+                </div>
+              </div>
+              <div className="h-48">
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={earningsData}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+                    <XAxis dataKey="name" fontSize={12} />
+                    <YAxis fontSize={12} />
+                    <Tooltip />
+                    <Bar dataKey="value" fill="#00386F" radius={[2, 2, 0, 0]} />
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+            </div>
+
+            {/* Service Categories Pie Chart */}
+            <div className="bg-white p-4 rounded-lg shadow-sm border border-gray-100 flex-1">
+              <div className="flex justify-between items-center mb-3">
+                <h3 className="text-md font-semibold text-gray-800">Service Distribution</h3>
+                <div className="flex items-center gap-1">
+                  <button className="text-gray-400 hover:text-gray-600 p-0.5">
+                    <FaFilter size={12} />
+                  </button>
+                  <button className="text-gray-400 hover:text-gray-600 p-0.5">
+                    <FaEllipsisV size={12} />
+                  </button>
+                </div>
+              </div>
+              <div className="h-48 flex items-center justify-center">
+                <ResponsiveContainer width="100%" height="100%">
+                  <PieChart>
+                    <Pie
+                      data={categoriesData}
+                      cx="50%"
+                      cy="50%"
+                      innerRadius={40}
+                      outerRadius={70}
+                      paddingAngle={2}
+                      dataKey="value"
+                      label
+                    >
+                      {categoriesData.map((entry, index) => (
+                        <Cell key={index} fill={COLORS[index % COLORS.length]} />
+                      ))}
+                    </Pie>
+                    <Tooltip />
+                  </PieChart>
+                </ResponsiveContainer>
+              </div>
+              <div className="flex flex-wrap gap-2 mt-2 justify-center">
+                {categoriesData.map((cat, index) => (
+                  <div key={index} className="flex items-center gap-1">
+                    <span
+                      className="w-2 h-2 rounded-full"
+                      style={{ background: COLORS[index] }}
+                    ></span>
+                    <span className="text-xs text-gray-600">{cat.name}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Recent Activities - Show in all tabs */}
+        <div className="bg-white p-4 rounded-lg shadow-sm border border-gray-100">
+          <div className="flex justify-between items-center mb-3">
+            <h3 className="text-md font-semibold text-gray-800">Recent Activities</h3>
+            <button className="text-xs text-blue-600 font-medium">View All</button>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            {activities.map((activity) => (
+              <div key={activity.id} className="flex items-start gap-2 p-2 rounded-md hover:bg-gray-50 transition-colors border border-gray-100">
+                <div className={`mt-1 w-1.5 h-1.5 rounded-full ${
+                  activity.status === 'completed' ? 'bg-green-500' : 
+                  activity.status === 'pending' ? 'bg-yellow-500' : 'bg-blue-500'
+                }`}></div>
+                <div className="flex-1">
+                  <p className="text-xs font-medium">{activity.activity}</p>
+                  <div className="flex items-center text-xs text-gray-500 mt-0.5">
+                    <span className="bg-gray-100 px-1.5 py-0.5 rounded text-xs">{activity.type}</span>
+                    <span className="mx-1">•</span>
+                    <span className="text-xs">{activity.date}</span>
+                  </div>
+                </div>
+                <span className={`text-xs px-1.5 py-0.5 rounded-full ${
+                  activity.status === 'completed' ? 'bg-green-100 text-green-800' : 
+                  activity.status === 'pending' ? 'bg-yellow-100 text-yellow-800' : 'bg-blue-100 text-blue-800'
+                }`}>
+                  {activity.status}
+                </span>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
     </div>
   );
 }
