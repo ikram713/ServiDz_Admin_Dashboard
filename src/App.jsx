@@ -2,6 +2,7 @@ import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import AdminLogin from "./pages/AdminLogin";
 import Dashboard from "./pages/Dashboard";
 import Users from "./pages/users"; // Import the Users component
+import Taskers from "./pages/Taskers";
 
 function App() {
   return (
@@ -11,6 +12,7 @@ function App() {
         <Route path="/" element={<AdminLogin />} />
         <Route path="/dashboard" element={<Dashboard />} />
         <Route path="/users" element={<Users />} /> {/* Add Users route */}
+        <Route path="/taskers" element={<Taskers />} /> {/* Add Taskers route */}
       </Routes>
     </Router>
   );
