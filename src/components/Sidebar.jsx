@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { useNavigate, useLocation } from "react-router-dom"; // Import navigation hooks
 import {
   FaTachometerAlt,
   FaUsers,
@@ -15,10 +16,29 @@ import {
 import logo from "../assets/white_logo.png";
 
 const Sidebar = () => {
-  const [active, setActive] = useState("Dashboard");
   const [isOpen, setIsOpen] = useState(false);
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
+  const navigate = useNavigate();
+  const location = useLocation();
+
+  // Set active based on current path
+  const getActiveItem = () => {
+    const path = location.pathname;
+    if (path === "/dashboard") return "Dashboard";
+    if (path === "/users") return "Users";
+    if (path === "/taskers") return "Taskers";
+    if (path === "/services") return "Services";
+    if (path === "/bookings") return "Bookings";
+    return "Dashboard";
+  };
+
+  const [active, setActive] = useState(getActiveItem());
+
+  // Update active item when location changes
+  useEffect(() => {
+    setActive(getActiveItem());
+  }, [location]);
 
   useEffect(() => {
     const checkScreenSize = () => {
@@ -36,11 +56,11 @@ const Sidebar = () => {
   }, []);
 
   const menuItems = [
-    { name: "Dashboard", icon: <FaTachometerAlt size={18} /> },
-    { name: "Users", icon: <FaUsers size={18} /> },
-    { name: "Taskers", icon: <FaUserTie size={18} /> },
-    { name: "Services", icon: <FaShoppingBag size={18} /> },
-    { name: "Bookings", icon: <FaCalendarCheck size={18} /> },
+    { name: "Dashboard", icon: <FaTachometerAlt size={18} />, path: "/dashboard" },
+    { name: "Users", icon: <FaUsers size={18} />, path: "/users" },
+    { name: "Taskers", icon: <FaUserTie size={18} />, path: "/taskers" },
+    { name: "Services", icon: <FaShoppingBag size={18} />, path: "/services" },
+    { name: "Bookings", icon: <FaCalendarCheck size={18} />, path: "/bookings" },
   ];
 
   const toggleSidebar = () => {
@@ -51,11 +71,19 @@ const Sidebar = () => {
     setIsCollapsed(!isCollapsed);
   };
 
-  const handleItemClick = (itemName) => {
+  const handleItemClick = (itemName, itemPath) => {
     setActive(itemName);
+    navigate(itemPath); // Navigate to the specified path
     if (isMobile) {
       setIsOpen(false);
     }
+  };
+
+  const handleLogout = () => {
+    // Add your logout logic here
+    console.log("Logging out...");
+    // Typically you would clear authentication tokens and redirect to login
+    navigate("/");
   };
 
   return (
@@ -131,7 +159,7 @@ const Sidebar = () => {
             {menuItems.map((item) => (
               <button
                 key={item.name}
-                onClick={() => handleItemClick(item.name)}
+                onClick={() => handleItemClick(item.name, item.path)}
                 className={`flex items-center gap-3 px-4 py-3 text-sm transition-all rounded-lg text-left group relative
                   ${
                     active === item.name
@@ -165,6 +193,7 @@ const Sidebar = () => {
           className={`px-3 mb-6 ${isCollapsed ? "flex justify-center" : ""}`}
         >
           <button
+            onClick={handleLogout}
             className={`flex items-center gap-3 px-4 py-3 hover:bg-blue-800 w-full rounded-lg transition-colors hover:shadow-md ${
               isCollapsed ? "justify-center" : ""
             }`}
@@ -175,7 +204,7 @@ const Sidebar = () => {
         </div>
       </div>
 
-      {/* Main Content Area */}
+      {/* Main Content Area - This should contain your page content */}
       <div
         className={`
         flex-1 transition-all duration-300 ease-in-out overflow-auto
@@ -189,7 +218,9 @@ const Sidebar = () => {
             : "ml-0"
         }
       `}
-      ></div>
+      >
+        {/* Your page content will be rendered here based on the route */}
+      </div>
     </div>
   );
 };
