@@ -17,6 +17,7 @@ import {
 } from "react-icons/fa";
 import { getAllUsers } from '../api/usersApi';
 import { banUser } from '../api/usersApi';
+import { getAdminProfile } from "../api/admin"; // Import the admin API
 
 export default function Users() {
   const [users, setUsers] = useState([]);
@@ -24,8 +25,11 @@ export default function Users() {
   const [statusFilter, setStatusFilter] = useState("all");
   const [selectedUsers, setSelectedUsers] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [profileLoading, setProfileLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [profileError, setProfileError] = useState(null);
   const [banningUserId, setBanningUserId] = useState(null);
+  const [adminData, setAdminData] = useState(null); // State for admin profile
 
   // Fetch users from API
   useEffect(() => {
@@ -48,7 +52,27 @@ export default function Users() {
       }
     };
 
+    const fetchAdminProfile = async () => {
+      try {
+        setProfileLoading(true);
+        const data = await getAdminProfile();
+        setAdminData(data);
+      } catch (err) {
+        console.error("Failed to fetch admin profile:", err);
+        setProfileError("Failed to load admin profile.");
+        
+        // If it's an authentication error, redirect to login
+        if (err.message.includes('token') || err.response?.status === 401) {
+          localStorage.removeItem('adminToken');
+          window.location.href = '/login';
+        }
+      } finally {
+        setProfileLoading(false);
+      }
+    };
+
     fetchUsers();
+    fetchAdminProfile();
   }, []);
 
   // Handle ban user action
@@ -185,13 +209,30 @@ export default function Users() {
               <FaBell />
               <span className="absolute top-1 right-1 w-1.5 h-1.5 bg-red-500 rounded-full"></span>
             </button>
-            <div className="flex items-center gap-1">
-              <img
-                src="https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?ixlib=rb-1.2.1&auto=format&fit=facearea&facepad=2&w=256&h-256&q=80"
-                alt="profile"
-                className="w-6 h-6 rounded-full border border-white"
-              />
-            </div>
+            
+            {/* Admin Profile Section */}
+            {profileLoading ? (
+              <div className="flex items-center gap-1">
+                <div className="w-6 h-6 rounded-full bg-gray-200 animate-pulse"></div>
+              </div>
+            ) : profileError ? (
+              <div className="flex items-center gap-1">
+                <div className="w-6 h-6 rounded-full bg-gray-200 flex items-center justify-center">
+                  <span className="text-xs">⚠️</span>
+                </div>
+              </div>
+            ) : (
+              <div className="flex items-center gap-1">
+                <img
+                  src={adminData?.avatar || "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?ixlib=rb-1.2.1&auto=format&fit=facearea&facepad=2&w=256&h-256&q=80"}
+                  alt="profile"
+                  className="w-6 h-6 rounded-full border border-white"
+                  onError={(e) => {
+                    e.target.src = "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?ixlib=rb-1.2.1&auto=format&fit=facearea&facepad=2&w=256&h-256&q=80";
+                  }}
+                />
+              </div>
+            )}
           </div>
         </div>
 

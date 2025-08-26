@@ -25,6 +25,7 @@ import {
   Pie
 } from "recharts";
 import { getDashboardAnalytics } from "../api/dashboardApi";
+import { getAdminProfile } from "../api/admin"; // Import the admin API
 
 // Dummy data (will be replaced by API)
 const defaultEarningsData = [
@@ -56,8 +57,11 @@ const COLORS = ["#4CAF50", "#2196F3", "#FF9800", "#9C27B0"];
 export default function Dashboard() {
   const [activeTab, setActiveTab] = useState("overview");
   const [dashboardData, setDashboardData] = useState(null);
+  const [adminData, setAdminData] = useState(null); // State for admin profile
   const [loading, setLoading] = useState(true);
+  const [profileLoading, setProfileLoading] = useState(true); // Separate loading for profile
   const [error, setError] = useState(null);
+  const [profileError, setProfileError] = useState(null); // Separate error for profile
 
   useEffect(() => {
     const fetchDashboardData = async () => {
@@ -73,7 +77,27 @@ export default function Dashboard() {
       }
     };
 
+    const fetchAdminProfile = async () => {
+      try {
+        setProfileLoading(true);
+        const data = await getAdminProfile();
+        setAdminData(data);
+      } catch (err) {
+        console.error("Failed to fetch admin profile:", err);
+        setProfileError("Failed to load admin profile.");
+        
+        // If it's an authentication error, redirect to login
+        if (err.message.includes('token') || err.response?.status === 401) {
+          localStorage.removeItem('adminToken');
+          window.location.href = '/login';
+        }
+      } finally {
+        setProfileLoading(false);
+      }
+    };
+
     fetchDashboardData();
+    fetchAdminProfile();
   }, []);
 
   const handleTabClick = (tabName) => {
@@ -164,17 +188,42 @@ export default function Dashboard() {
               <FaBell className="text-lg" />
               <span className="absolute top-0 right-0 w-1.5 h-1.5 bg-red-500 rounded-full"></span>
             </button>
-            <div className="flex items-center gap-2">
-              <img
-                src="https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?ixlib=rb-1.2.1&auto=format&fit=facearea&facepad=2&w=256&h-256&q=80"
-                alt="profile"
-                className="w-8 h-8 rounded-full border-2 border-white shadow-sm"
-              />
-              <div className="hidden md:block">
-                <p className="text-xs font-medium">Admin User</p>
-                <p className="text-xs text-gray-500">Administrator</p>
+            
+            {/* Admin Profile Section */}
+            {profileLoading ? (
+              <div className="flex items-center gap-2">
+                <div className="w-8 h-8 rounded-full bg-gray-200 animate-pulse"></div>
+                <div className="hidden md:block">
+                  <div className="h-3 w-20 bg-gray-200 rounded animate-pulse mb-1"></div>
+                  <div className="h-2 w-16 bg-gray-200 rounded animate-pulse"></div>
+                </div>
               </div>
-            </div>
+            ) : profileError ? (
+              <div className="flex items-center gap-2">
+                <div className="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center">
+                  <span className="text-xs">⚠️</span>
+                </div>
+                <div className="hidden md:block">
+                  <p className="text-xs font-medium text-gray-500">Error</p>
+                  <p className="text-xs text-gray-400">Loading profile failed</p>
+                </div>
+              </div>
+            ) : (
+              <div className="flex items-center gap-2">
+                <img
+                  src={adminData?.avatar || "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?ixlib=rb-1.2.1&auto=format&fit=facearea&facepad=2&w=256&h-256&q=80"}
+                  alt="profile"
+                  className="w-8 h-8 rounded-full border-2 border-white shadow-sm"
+                  onError={(e) => {
+                    e.target.src = "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?ixlib=rb-1.2.1&auto=format&fit=facearea&facepad=2&w=256&h-256&q=80";
+                  }}
+                />
+                <div className="hidden md:block">
+                  <p className="text-xs font-medium">{adminData?.name || "Admin User"}</p>
+                  <p className="text-xs text-gray-500">{adminData?.email || "Administrator"}</p>
+                </div>
+              </div>
+            )}
           </div>
         </div>
 
