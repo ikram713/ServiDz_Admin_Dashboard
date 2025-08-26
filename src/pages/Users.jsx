@@ -15,9 +15,8 @@ import {
   FaEllipsisV,
   FaSpinner
 } from "react-icons/fa";
-import { getAllUsers } from '../api/usersApi';
-import { banUser } from '../api/usersApi';
-import { getAdminProfile } from "../api/admin"; // Import the admin API
+import { getAllUsers, banUser, activateUser } from '../api/usersApi';
+import { getAdminProfile } from "../api/admin";
 
 export default function Users() {
   const [users, setUsers] = useState([]);
@@ -29,7 +28,8 @@ export default function Users() {
   const [error, setError] = useState(null);
   const [profileError, setProfileError] = useState(null);
   const [banningUserId, setBanningUserId] = useState(null);
-  const [adminData, setAdminData] = useState(null); // State for admin profile
+  const [activatingUserId, setActivatingUserId] = useState(null);
+  const [adminData, setAdminData] = useState(null);
 
   // Fetch users from API
   useEffect(() => {
@@ -98,8 +98,10 @@ export default function Users() {
   // Handle activate user action
   const handleActivateUser = async (userId) => {
     try {
-      // You'll need to create an activateUser API function
-      // For now, just update the local state
+      setActivatingUserId(userId);
+      await activateUser(userId);
+      
+      // Update the user status in the local state
       setUsers(users.map(user => 
         user.id === userId ? { ...user, status: 'active' } : user
       ));
@@ -108,6 +110,8 @@ export default function Users() {
     } catch (err) {
       console.error("Error activating user:", err);
       alert('Failed to activate user. Please try again.');
+    } finally {
+      setActivatingUserId(null);
     }
   };
 
@@ -370,8 +374,13 @@ export default function Users() {
                               className="p-1 text-green-600 hover:bg-green-50 rounded"
                               title="Activate User"
                               onClick={() => handleActivateUser(user.id)}
+                              disabled={activatingUserId === user.id}
                             >
-                              <FaCheckCircle className="text-xs" />
+                              {activatingUserId === user.id ? (
+                                <FaSpinner className="text-xs animate-spin" />
+                              ) : (
+                                <FaCheckCircle className="text-xs" />
+                              )}
                             </button>
                           )}
                           <button 
@@ -427,3 +436,5 @@ export default function Users() {
     </div>
   );
 }
+
+

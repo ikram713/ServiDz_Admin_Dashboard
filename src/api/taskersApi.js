@@ -23,3 +23,14 @@ export const banTasker = async (taskerId) => {
     throw error;
   }
 };
+
+// Activate a tasker by ID
+export const activateTasker = async (taskerId) => {
+  try {
+    const response = await axios.put(`${API_URL}/activate-tasker/${taskerId}`);
+    return response.data; // returns { message: 'Tasker activated successfully' }
+  } catch (error) {
+    console.error('Error activating tasker:', error);
+    throw error;
+  }
+};

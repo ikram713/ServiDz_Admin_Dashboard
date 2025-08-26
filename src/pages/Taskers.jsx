@@ -18,7 +18,7 @@ import {
   FaTools
 } from "react-icons/fa";
 import { getAllTaskers } from '../api/taskersApi';
-import { banTasker } from '../api/taskersApi';
+import { banTasker, activateTasker } from '../api/taskersApi';
 import { getAdminProfile } from "../api/admin"; // Import the admin API
 
 export default function Taskers() {
@@ -128,8 +128,8 @@ export default function Taskers() {
   // Handle activate tasker action
   const handleActivateTasker = async (taskerId) => {
     try {
-      // You'll need to create an activateTasker API function
-      // For now, just update the local state
+        setBanningTaskerId(taskerId);
+        await activateTasker(taskerId);
       setTaskers(taskers.map(tasker => 
         tasker.id === taskerId ? { ...tasker, status: 'active' } : tasker
       ));

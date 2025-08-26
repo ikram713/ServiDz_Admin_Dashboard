@@ -25,3 +25,15 @@ export const banUser = async (userId) => {
     throw error;
   }
 };
+
+
+// Activate a user by ID
+export const activateUser = async (userId) => {
+  try {
+    const response = await axios.put(`${API_URL}/activate/${userId}`);
+    return response.data; // returns { message: 'User activated successfully' }
+  } catch (error) {
+    console.error('Error activating user:', error);
+    throw error;
+  }
+};
