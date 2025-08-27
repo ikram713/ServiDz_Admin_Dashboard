@@ -61,6 +61,7 @@ const Sidebar = () => {
     { name: "Taskers", icon: <FaUserTie size={18} />, path: "/taskers" },
     { name: "Services", icon: <FaShoppingBag size={18} />, path: "/services" },
     { name: "Bookings", icon: <FaCalendarCheck size={18} />, path: "/bookings" },
+    
   ];
 
   const toggleSidebar = () => {
@@ -124,7 +125,7 @@ const Sidebar = () => {
         <div>
           <div className="flex items-center justify-between p-4 border-b border-blue-700/30">
             {!isCollapsed && (
-              <div className="flex items-center space-x-3">
+              <div className="flex  items-center space-x-3">
                 <img
                   src={logo}
                   alt="ServiDZ Logo"
