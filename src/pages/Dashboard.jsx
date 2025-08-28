@@ -29,23 +29,6 @@ import { getDashboardAnalytics } from "../api/dashboardApi";
 import { getAdminProfile } from "../api/admin";
 import { getTaskersDistribution, fetchMonthlyEarnings } from "../api/analyticsApi";
 
-// Dummy data (will be replaced by API)
-const defaultEarningsData = [
-  { name: "Jan", value: 50 },
-  { name: "Feb", value: 200 },
-  { name: "Mar", value: 150 },
-  { name: "Apr", value: 80 },
-  { name: "May", value: 300 },
-  { name: "Jun", value: 250 },
-];
-
-const defaultCategoriesData = [
-  { name: "Plumbing", value: 400 },
-  { name: "Car Repair", value: 300 },
-  { name: "Electricity", value: 300 },
-  { name: "Cleaning", value: 200 },
-];
-
 const defaultActivities = [
   { id: 1, activity: "New user signup", type: "User", date: "Apr 29, 2024", status: "completed" },
   { id: 2, activity: "Tasker application approved", type: "Tasker", date: "Apr 28, 2024", status: "completed" },
@@ -70,6 +53,7 @@ export default function Dashboard() {
   const [profileError, setProfileError] = useState(null);
   const [serviceError, setServiceError] = useState(null);
   const [earningsError, setEarningsError] = useState(null);
+  const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
 
   useEffect(() => {
     const fetchDashboardData = async () => {
@@ -126,14 +110,12 @@ export default function Dashboard() {
       } catch (err) {
         console.error("Failed to fetch service distribution:", err);
         setServiceError("Failed to load service distribution data.");
-        // Use default data as fallback
-        setServiceDistribution(defaultCategoriesData);
       } finally {
         setServiceLoading(false);
       }
     };
 
-    const fetchMonthlyEarningsData = async () => {
+    const fetchMonthlyEarningsData = async (year = new Date().getFullYear()) => {
       try {
         setEarningsLoading(true);
         const token = localStorage.getItem("adminToken");
@@ -144,31 +126,49 @@ export default function Dashboard() {
         
         const data = await fetchMonthlyEarnings(token);
         
-        // Transform the data to match the format expected by the BarChart
-        // API returns: [{"year":2025,"month":8,"totalEarnings":437250}]
-        const formattedData = data.map(item => {
-          const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", 
-                             "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
-          
-          // Use the month number directly from the API response
-          const monthIndex = item.month - 1; // Convert to 0-based index
-          const monthName = monthIndex >= 0 && monthIndex < 12 
-            ? monthNames[monthIndex] 
-            : `Month ${item.month}`;
+        // Create an array for all 12 months with zero earnings as default
+        const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", 
+                           "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+        
+        // Check if the API response is an array
+        if (!Array.isArray(data)) {
+          throw new Error("Invalid data format received from API");
+        }
+        
+        const allMonthsData = Array.from({ length: 12 }, (_, index) => {
+          // Find matching month data from API response
+          const monthData = data.find(item => {
+            // Handle different possible API response structures
+            const itemYear = item.year || item._id?.year;
+            const itemMonth = item.month || item._id?.month;
+            
+            return itemYear === year && itemMonth === (index + 1);
+          });
           
           return {
-            name: monthName,
-            value: item.totalEarnings || 0
+            name: monthNames[index],
+            value: monthData ? (monthData.totalEarnings || monthData.earnings || 0) : 0,
+            actualMonth: index + 1, // Store the actual month number for reference
+            year: year
           };
         });
         
-        setMonthlyEarnings(formattedData);
+        setMonthlyEarnings(allMonthsData);
         setEarningsError(null);
       } catch (err) {
         console.error("Failed to fetch monthly earnings:", err);
         setEarningsError("Failed to load monthly earnings data.");
-        // Use default data as fallback
-        setMonthlyEarnings(defaultEarningsData);
+        
+        // Fallback: Create empty data for all months
+        const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", 
+                           "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+        const emptyData = monthNames.map((name, index) => ({
+          name,
+          value: 0,
+          actualMonth: index + 1,
+          year: new Date().getFullYear()
+        }));
+        setMonthlyEarnings(emptyData);
       } finally {
         setEarningsLoading(false);
       }
@@ -177,8 +177,8 @@ export default function Dashboard() {
     fetchDashboardData();
     fetchAdminProfile();
     fetchServiceDistribution();
-    fetchMonthlyEarningsData();
-  }, []);
+    fetchMonthlyEarningsData(selectedYear);
+  }, [selectedYear]);
 
   const handleTabClick = (tabName) => {
     setActiveTab(tabName);
@@ -188,8 +188,6 @@ export default function Dashboard() {
   const formatNumber = (num) => {
     return num?.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",") || "0";
   };
-
-  // Format currency
 
   // Calculate percentage change with arrow indicator
   const renderChangeIndicator = (value) => {
@@ -296,13 +294,13 @@ export default function Dashboard() {
                     <img
     src={
       adminData?.avatar ||
-      "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?...etc"
+      "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?ixlib=rb-1.2.1&auto=format&fit=crop&w=100&q=80"
     }
     alt="profile"
     className="w-8 h-8 rounded-full border-2 border-white shadow-sm cursor-pointer"
     onError={(e) => {
       e.target.src =
-        "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?...etc";
+        "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?ixlib=rb-1.2.1&auto=format&fit=crop&w=100&q=80";
     }}
   />
                 </Link>
@@ -395,7 +393,17 @@ export default function Dashboard() {
                 <h3 className="text-md font-semibold text-gray-800">
                   {activeTab === "overview" ? "Monthly Earnings" : "Revenue by Month"}
                 </h3>
-                <div className="flex items-center gap-1">
+                <div className="flex items-center gap-2">
+                  {/* Year selector dropdown */}
+                  <select 
+                    value={selectedYear}
+                    onChange={(e) => setSelectedYear(parseInt(e.target.value))}
+                    className="text-xs border border-gray-300 rounded px-2 py-1"
+                  >
+                    <option value={2023}>2023</option>
+                    <option value={2024}>2024</option>
+                    <option value={2025}>2025</option>
+                  </select>
                   <button className="text-gray-400 hover:text-gray-600 p-0.5">
                     <FaFilter size={12} />
                   </button>
@@ -432,9 +440,24 @@ export default function Dashboard() {
                   <ResponsiveContainer width="100%" height="100%">
                     <BarChart data={monthlyEarnings}>
                       <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-                      <XAxis dataKey="name" fontSize={12} />
+                      <XAxis 
+                        dataKey="name" 
+                        fontSize={12}
+                        interval={0} // This ensures all months are displayed
+                        angle={-45}  // Optional: angle the text if needed for space
+                        textAnchor="end"
+                        height={60}  // Increase height to accommodate angled text
+                      />
                       <YAxis fontSize={12} tickFormatter={(value) => `$${value}`} />
-                      <Tooltip formatter={(value) => [`$${value}`, 'Earnings']} />
+                      <Tooltip 
+                        formatter={(value) => [`$${value.toFixed(2)}`, 'Earnings']}
+                        labelFormatter={(name, payload) => {
+                          if (payload && payload.length > 0) {
+                            return `${name} ${payload[0].payload.year}`;
+                          }
+                          return name;
+                        }}
+                      />
                       <Bar dataKey="value" fill="#00386F" radius={[2, 2, 0, 0]} />
                     </BarChart>
                   </ResponsiveContainer>
