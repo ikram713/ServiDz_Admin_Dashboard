@@ -5,6 +5,7 @@ import Users from "./pages/users"; // Import the Users component
 import Taskers from "./pages/Taskers";
 import Bookings from "./pages/Bookings"; // Import the Bookings component
 import Services from "./pages/Services"; // Import the Services component
+import Profile from "./pages/Profile"; // Import the Profile component
 
 function App() {
   return (
@@ -17,6 +18,7 @@ function App() {
         <Route path="/taskers" element={<Taskers />} /> 
         <Route path="/bookings" element={<Bookings />} /> 
         <Route path="/services" element={<Services />} />
+        <Route path="/profile" element={<Profile />} />
       </Routes>
     </Router>
   );

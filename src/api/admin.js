@@ -22,3 +22,26 @@ export const getAdminProfile = async () => {
     throw error.response?.data || { message: 'Failed to fetch admin profile' };
   }
 };
+
+// Upload / Update admin avatar
+export const uploadAdminAvatar = async (file) => {
+  try {
+    const token = localStorage.getItem("adminToken");
+    if (!token) throw new Error("No admin token found. Please login.");
+
+    const formData = new FormData();
+    formData.append("avatar", file); // Changed from "serviDZ_uploads" to "avatar"
+
+    const response = await axios.put(`${API_URL}/avatar`, formData, { // Changed from POST to PUT
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "multipart/form-data",
+      },
+    });
+
+    return response.data; // { message, avatar }
+  } catch (error) {
+    console.error("Error uploading admin avatar:", error);
+    throw error.response?.data || { message: "Failed to upload avatar" };
+  }
+};

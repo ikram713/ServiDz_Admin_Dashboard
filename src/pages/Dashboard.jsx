@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import Sidebar from "../components/Sidebar";
+import { Link } from "react-router-dom";
 import {
   FaUsers,
   FaUserTie,
@@ -210,18 +211,20 @@ export default function Dashboard() {
               </div>
             ) : (
               <div className="flex items-center gap-2">
-                <img
-                  src={adminData?.avatar || "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?ixlib=rb-1.2.1&auto=format&fit=facearea&facepad=2&w=256&h-256&q=80"}
-                  alt="profile"
-                  className="w-8 h-8 rounded-full border-2 border-white shadow-sm"
-                  onError={(e) => {
-                    e.target.src = "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?ixlib=rb-1.2.1&auto=format&fit=facearea&facepad=2&w=256&h-256&q=80";
-                  }}
-                />
-                <div className="hidden md:block">
-                  <p className="text-xs font-medium">{adminData?.name || "Admin User"}</p>
-                  <p className="text-xs text-gray-500">{adminData?.email || "Administrator"}</p>
-                </div>
+               <Link to="/profile">
+                    <img
+    src={
+      adminData?.avatar ||
+      "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?...etc"
+    }
+    alt="profile"
+    className="w-8 h-8 rounded-full border-2 border-white shadow-sm cursor-pointer"
+    onError={(e) => {
+      e.target.src =
+        "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?...etc";
+    }}
+  />
+                </Link>
               </div>
             )}
           </div>
