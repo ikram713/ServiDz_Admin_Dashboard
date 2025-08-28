@@ -26,7 +26,8 @@ import {
   Pie
 } from "recharts";
 import { getDashboardAnalytics } from "../api/dashboardApi";
-import { getAdminProfile } from "../api/admin"; // Import the admin API
+import { getAdminProfile } from "../api/admin";
+import { getTaskersDistribution, fetchMonthlyEarnings } from "../api/analyticsApi";
 
 // Dummy data (will be replaced by API)
 const defaultEarningsData = [
@@ -53,16 +54,22 @@ const defaultActivities = [
   { id: 5, activity: "Service complaint", type: "Support", date: "Apr 25, 2024", status: "processing" },
 ];
 
-const COLORS = ["#4CAF50", "#2196F3", "#FF9800", "#9C27B0"];
+const COLORS = ["#4CAF50", "#2196F3", "#FF9800", "#9C27B0", "#F44336", "#607D8B", "#795548", "#E91E63"];
 
 export default function Dashboard() {
   const [activeTab, setActiveTab] = useState("overview");
   const [dashboardData, setDashboardData] = useState(null);
-  const [adminData, setAdminData] = useState(null); // State for admin profile
+  const [adminData, setAdminData] = useState(null);
+  const [serviceDistribution, setServiceDistribution] = useState([]);
+  const [monthlyEarnings, setMonthlyEarnings] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [profileLoading, setProfileLoading] = useState(true); // Separate loading for profile
+  const [profileLoading, setProfileLoading] = useState(true);
+  const [serviceLoading, setServiceLoading] = useState(false);
+  const [earningsLoading, setEarningsLoading] = useState(false);
   const [error, setError] = useState(null);
-  const [profileError, setProfileError] = useState(null); // Separate error for profile
+  const [profileError, setProfileError] = useState(null);
+  const [serviceError, setServiceError] = useState(null);
+  const [earningsError, setEarningsError] = useState(null);
 
   useEffect(() => {
     const fetchDashboardData = async () => {
@@ -97,8 +104,80 @@ export default function Dashboard() {
       }
     };
 
+    const fetchServiceDistribution = async () => {
+      try {
+        setServiceLoading(true);
+        const token = localStorage.getItem("adminToken");
+        if (!token) {
+          setServiceError("Authentication required");
+          return;
+        }
+        
+        const data = await getTaskersDistribution(token);
+        
+        // Transform the data to match the format expected by the PieChart
+        const formattedData = data.map(item => ({
+          name: item._id.charAt(0).toUpperCase() + item._id.slice(1), // Capitalize first letter
+          value: item.count
+        }));
+        
+        setServiceDistribution(formattedData);
+        setServiceError(null);
+      } catch (err) {
+        console.error("Failed to fetch service distribution:", err);
+        setServiceError("Failed to load service distribution data.");
+        // Use default data as fallback
+        setServiceDistribution(defaultCategoriesData);
+      } finally {
+        setServiceLoading(false);
+      }
+    };
+
+    const fetchMonthlyEarningsData = async () => {
+      try {
+        setEarningsLoading(true);
+        const token = localStorage.getItem("adminToken");
+        if (!token) {
+          setEarningsError("Authentication required");
+          return;
+        }
+        
+        const data = await fetchMonthlyEarnings(token);
+        
+        // Transform the data to match the format expected by the BarChart
+        // API returns: [{"year":2025,"month":8,"totalEarnings":437250}]
+        const formattedData = data.map(item => {
+          const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", 
+                             "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+          
+          // Use the month number directly from the API response
+          const monthIndex = item.month - 1; // Convert to 0-based index
+          const monthName = monthIndex >= 0 && monthIndex < 12 
+            ? monthNames[monthIndex] 
+            : `Month ${item.month}`;
+          
+          return {
+            name: monthName,
+            value: item.totalEarnings || 0
+          };
+        });
+        
+        setMonthlyEarnings(formattedData);
+        setEarningsError(null);
+      } catch (err) {
+        console.error("Failed to fetch monthly earnings:", err);
+        setEarningsError("Failed to load monthly earnings data.");
+        // Use default data as fallback
+        setMonthlyEarnings(defaultEarningsData);
+      } finally {
+        setEarningsLoading(false);
+      }
+    };
+
     fetchDashboardData();
     fetchAdminProfile();
+    fetchServiceDistribution();
+    fetchMonthlyEarningsData();
   }, []);
 
   const handleTabClick = (tabName) => {
@@ -109,6 +188,8 @@ export default function Dashboard() {
   const formatNumber = (num) => {
     return num?.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",") || "0";
   };
+
+  // Format currency
 
   // Calculate percentage change with arrow indicator
   const renderChangeIndicator = (value) => {
@@ -323,17 +404,42 @@ export default function Dashboard() {
                   </button>
                 </div>
               </div>
-              <div className="h-48">
-                <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={defaultEarningsData}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-                    <XAxis dataKey="name" fontSize={12} />
-                    <YAxis fontSize={12} />
-                    <Tooltip />
-                    <Bar dataKey="value" fill="#00386F" radius={[2, 2, 0, 0]} />
-                  </BarChart>
-                </ResponsiveContainer>
-              </div>
+              {earningsLoading ? (
+                <div className="h-48 flex items-center justify-center">
+                  <div className="text-center">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
+                    <p className="mt-2 text-sm text-gray-500">Loading earnings data...</p>
+                  </div>
+                </div>
+              ) : earningsError ? (
+                <div className="h-48 flex items-center justify-center">
+                  <div className="text-center">
+                    <p className="text-red-500 text-sm mb-2">Failed to load earnings data</p>
+                    <button 
+                      className="px-3 py-1 bg-blue-600 text-white rounded text-xs hover:bg-blue-700"
+                      onClick={() => window.location.reload()}
+                    >
+                      Retry
+                    </button>
+                  </div>
+                </div>
+              ) : monthlyEarnings.length === 0 ? (
+                <div className="h-48 flex items-center justify-center">
+                  <p className="text-gray-500 text-sm">No earnings data available</p>
+                </div>
+              ) : (
+                <div className="h-48">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart data={monthlyEarnings}>
+                      <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+                      <XAxis dataKey="name" fontSize={12} />
+                      <YAxis fontSize={12} tickFormatter={(value) => `$${value}`} />
+                      <Tooltip formatter={(value) => [`$${value}`, 'Earnings']} />
+                      <Bar dataKey="value" fill="#00386F" radius={[2, 2, 0, 0]} />
+                    </BarChart>
+                  </ResponsiveContainer>
+                </div>
+              )}
             </div>
 
             {/* Service Categories Pie Chart */}
@@ -349,38 +455,65 @@ export default function Dashboard() {
                   </button>
                 </div>
               </div>
-              <div className="h-48 flex items-center justify-center">
-                <ResponsiveContainer width="100%" height="100%">
-                  <PieChart>
-                    <Pie
-                      data={defaultCategoriesData}
-                      cx="50%"
-                      cy="50%"
-                      innerRadius={40}
-                      outerRadius={70}
-                      paddingAngle={2}
-                      dataKey="value"
-                      label
-                    >
-                      {defaultCategoriesData.map((entry, index) => (
-                        <Cell key={index} fill={COLORS[index % COLORS.length]} />
-                      ))}
-                    </Pie>
-                    <Tooltip />
-                  </PieChart>
-                </ResponsiveContainer>
-              </div>
-              <div className="flex flex-wrap gap-2 mt-2 justify-center">
-                {defaultCategoriesData.map((cat, index) => (
-                  <div key={index} className="flex items-center gap-1">
-                    <span
-                      className="w-2 h-2 rounded-full"
-                      style={{ background: COLORS[index] }}
-                    ></span>
-                    <span className="text-xs text-gray-600">{cat.name}</span>
+              {serviceLoading ? (
+                <div className="h-48 flex items-center justify-center">
+                  <div className="text-center">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
+                    <p className="mt-2 text-sm text-gray-500">Loading service data...</p>
                   </div>
-                ))}
-              </div>
+                </div>
+              ) : serviceError ? (
+                <div className="h-48 flex items-center justify-center">
+                  <div className="text-center">
+                    <p className="text-red-500 text-sm mb-2">Failed to load service distribution</p>
+                    <button 
+                      className="px-3 py-1 bg-blue-600 text-white rounded text-xs hover:bg-blue-700"
+                      onClick={() => window.location.reload()}
+                    >
+                      Retry
+                    </button>
+                  </div>
+                </div>
+              ) : serviceDistribution.length === 0 ? (
+                <div className="h-48 flex items-center justify-center">
+                  <p className="text-gray-500 text-sm">No service data available</p>
+                </div>
+              ) : (
+                <>
+                  <div className="h-48 flex items-center justify-center">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <PieChart>
+                        <Pie
+                          data={serviceDistribution}
+                          cx="50%"
+                          cy="50%"
+                          innerRadius={40}
+                          outerRadius={70}
+                          paddingAngle={2}
+                          dataKey="value"
+                          label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
+                        >
+                          {serviceDistribution.map((entry, index) => (
+                            <Cell key={index} fill={COLORS[index % COLORS.length]} />
+                          ))}
+                        </Pie>
+                        <Tooltip formatter={(value, name) => [`${value} taskers`, name]} />
+                      </PieChart>
+                    </ResponsiveContainer>
+                  </div>
+                  <div className="flex flex-wrap gap-2 mt-2 justify-center">
+                    {serviceDistribution.map((cat, index) => (
+                      <div key={index} className="flex items-center gap-1">
+                        <span
+                          className="w-2 h-2 rounded-full"
+                          style={{ background: COLORS[index % COLORS.length] }}
+                        ></span>
+                        <span className="text-xs text-gray-600">{cat.name} ({cat.value})</span>
+                      </div>
+                    ))}
+                  </div>
+                </>
+              )}
             </div>
           </div>
         )}
