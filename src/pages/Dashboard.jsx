@@ -28,14 +28,7 @@ import {
 import { getDashboardAnalytics } from "../api/dashboardApi";
 import { getAdminProfile } from "../api/admin";
 import { getTaskersDistribution, fetchMonthlyEarnings } from "../api/analyticsApi";
-
-const defaultActivities = [
-  { id: 1, activity: "New user signup", type: "User", date: "Apr 29, 2024", status: "completed" },
-  { id: 2, activity: "Tasker application approved", type: "Tasker", date: "Apr 28, 2024", status: "completed" },
-  { id: 3, activity: "New booking created", type: "Booking", date: "Apr 27, 2024", status: "pending" },
-  { id: 4, activity: "Payment processed", type: "Payment", date: "Apr 26, 2024", status: "completed" },
-  { id: 5, activity: "Service complaint", type: "Support", date: "Apr 25, 2024", status: "processing" },
-];
+import { fetchRecentActivities } from "../api/activityApi"; // Import the activity API
 
 const COLORS = ["#4CAF50", "#2196F3", "#FF9800", "#9C27B0", "#F44336", "#607D8B", "#795548", "#E91E63"];
 
@@ -45,14 +38,17 @@ export default function Dashboard() {
   const [adminData, setAdminData] = useState(null);
   const [serviceDistribution, setServiceDistribution] = useState([]);
   const [monthlyEarnings, setMonthlyEarnings] = useState([]);
+  const [recentActivities, setRecentActivities] = useState([]); // State for recent activities
   const [loading, setLoading] = useState(true);
   const [profileLoading, setProfileLoading] = useState(true);
   const [serviceLoading, setServiceLoading] = useState(false);
   const [earningsLoading, setEarningsLoading] = useState(false);
+  const [activitiesLoading, setActivitiesLoading] = useState(false); // Loading state for activities
   const [error, setError] = useState(null);
   const [profileError, setProfileError] = useState(null);
   const [serviceError, setServiceError] = useState(null);
   const [earningsError, setEarningsError] = useState(null);
+  const [activitiesError, setActivitiesError] = useState(null); // Error state for activities
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
 
   useEffect(() => {
@@ -174,10 +170,55 @@ export default function Dashboard() {
       }
     };
 
+    const fetchRecentActivitiesData = async () => {
+      try {
+        setActivitiesLoading(true);
+        const token = localStorage.getItem("adminToken");
+        if (!token) {
+          setActivitiesError("Authentication required");
+          return;
+        }
+        
+        const data = await fetchRecentActivities(token);
+        
+        // Transform the API data to match the format expected by the component
+        const formattedActivities = data.map((activity, index) => ({
+          id: index + 1,
+          activity: activity.activity,
+          type: activity.type,
+          date: new Date(activity.date).toLocaleDateString('en-US', {
+            month: 'short',
+            day: 'numeric',
+            year: 'numeric'
+          }),
+          status: activity.status
+        }));
+        
+        setRecentActivities(formattedActivities);
+        setActivitiesError(null);
+      } catch (err) {
+        console.error("Failed to fetch recent activities:", err);
+        setActivitiesError("Failed to load recent activities.");
+        
+        // Fallback: Use default activities if API fails
+        const defaultActivities = [
+          { id: 1, activity: "New user signup", type: "User", date: "Apr 29, 2024", status: "completed" },
+          { id: 2, activity: "Tasker application approved", type: "Tasker", date: "Apr 28, 2024", status: "completed" },
+          { id: 3, activity: "New booking created", type: "Booking", date: "Apr 27, 2024", status: "pending" },
+          { id: 4, activity: "Payment processed", type: "Payment", date: "Apr 26, 2024", status: "completed" },
+          { id: 5, activity: "Service complaint", type: "Support", date: "Apr 25, 2024", status: "processing" },
+        ];
+        setRecentActivities(defaultActivities);
+      } finally {
+        setActivitiesLoading(false);
+      }
+    };
+
     fetchDashboardData();
     fetchAdminProfile();
     fetchServiceDistribution();
     fetchMonthlyEarningsData(selectedYear);
+    fetchRecentActivitiesData();
   }, [selectedYear]);
 
   const handleTabClick = (tabName) => {
@@ -547,30 +588,47 @@ export default function Dashboard() {
             <h3 className="text-md font-semibold text-gray-800">Recent Activities</h3>
             <button className="text-xs text-blue-600 font-medium">View All</button>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-            {defaultActivities.map((activity) => (
-              <div key={activity.id} className="flex items-start gap-2 p-2 rounded-md hover:bg-gray-50 transition-colors border border-gray-100">
-                <div className={`mt-1 w-1.5 h-1.5 rounded-full ${
-                  activity.status === 'completed' ? 'bg-green-500' : 
-                  activity.status === 'pending' ? 'bg-yellow-500' : 'bg-blue-500'
-                }`}></div>
-                <div className="flex-1">
-                  <p className="text-xs font-medium">{activity.activity}</p>
-                  <div className="flex items-center text-xs text-gray-500 mt-0.5">
-                    <span className="bg-gray-100 px-1.5 py-0.5 rounded text-xs">{activity.type}</span>
-                    <span className="mx-1">•</span>
-                    <span className="text-xs">{activity.date}</span>
+          {activitiesLoading ? (
+            <div className="flex items-center justify-center py-4">
+              <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>
+              <p className="ml-2 text-sm text-gray-500">Loading activities...</p>
+            </div>
+          ) : activitiesError ? (
+            <div className="text-center py-4">
+              <p className="text-red-500 text-sm mb-2">{activitiesError}</p>
+              <button 
+                className="px-3 py-1 bg-blue-600 text-white rounded text-xs hover:bg-blue-700"
+                onClick={() => window.location.reload()}
+              >
+                Retry
+              </button>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              {recentActivities.map((activity) => (
+                <div key={activity.id} className="flex items-start gap-2 p-2 rounded-md hover:bg-gray-50 transition-colors border border-gray-100">
+                  <div className={`mt-1 w-1.5 h-1.5 rounded-full ${
+                    activity.status === 'completed' ? 'bg-green-500' : 
+                    activity.status === 'pending' ? 'bg-yellow-500' : 'bg-blue-500'
+                  }`}></div>
+                  <div className="flex-1">
+                    <p className="text-xs font-medium">{activity.activity}</p>
+                    <div className="flex items-center text-xs text-gray-500 mt-0.5">
+                      <span className="bg-gray-100 px-1.5 py-0.5 rounded text-xs">{activity.type}</span>
+                      <span className="mx-1">•</span>
+                      <span className="text-xs">{activity.date}</span>
+                    </div>
                   </div>
+                  <span className={`text-xs px-1.5 py-0.5 rounded-full ${
+                    activity.status === 'completed' ? 'bg-green-100 text-green-800' : 
+                    activity.status === 'pending' ? 'bg-yellow-100 text-yellow-800' : 'bg-blue-100 text-blue-800'
+                  }`}>
+                    {activity.status}
+                  </span>
                 </div>
-                <span className={`text-xs px-1.5 py-0.5 rounded-full ${
-                  activity.status === 'completed' ? 'bg-green-100 text-green-800' : 
-                  activity.status === 'pending' ? 'bg-yellow-100 text-yellow-800' : 'bg-blue-100 text-blue-800'
-                }`}>
-                  {activity.status}
-                </span>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          )}
         </div>
       </div>
     </div>
