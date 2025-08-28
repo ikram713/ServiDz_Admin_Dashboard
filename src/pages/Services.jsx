@@ -1,5 +1,6 @@
 import React from "react";
 import Sidebar from "../components/Sidebar";
+import { FaLayerGroup } from "react-icons/fa";
 
 // Category icons
 import plumberIcon from "../assets/icons/plumber.png";
